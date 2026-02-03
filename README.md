@@ -2,6 +2,16 @@
 
 A plugin that captures and logs all LLM API interactions for debugging and analysis purposes.
 
+## Install
+
+Tell OpenCode:
+
+``` bash
+Fetch and follow instructions from https://raw.githubusercontent.com/aiimoyu/opencode-llm-capture/refs/heads/main/INSTALL.md
+```
+
+For details, see [INSTALL.md](https://raw.githubusercontent.com/aiimoyu/opencode-llm-capture/refs/heads/main/INSTALL.md).
+
 ## Description
 
 This plugin intercepts HTTP requests made by OpenCode to LLM providers (like OpenAI, Anthropic, etc.) and saves detailed logs of both requests and responses. Each session gets its own directory with timestamped JSON files containing full request/response data including headers, bodies, and timing information.
@@ -33,6 +43,7 @@ The plugin automatically activates when loaded. Logs are saved to `~/.opencode/d
 ### File Structure
 
 Each log file contains:
+
 - Metadata (timestamp, duration, URL, method, response type)
 - Request (headers, body snapshot)
 - Response (status, headers, body snapshot)
