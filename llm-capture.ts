@@ -111,9 +111,9 @@ export default (async ({ directory }) => {
           const lines = txt.split("\n");
           responseSnapshot = {
             type: "sse-stream",
-            preview: lines.slice(0, 200),
+            preview: lines,
             totalLines: lines.length,
-            truncated: lines.length > 200,
+            truncated: false,
           };
           responseType = "stream";
         } else {

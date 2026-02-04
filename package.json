@@ -5,7 +5,8 @@
   "main": "llm-capture.ts",
   "scripts": {
     "build": "tsc",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "serve": "bun viewer/server.ts"
   },
   "keywords": [
     "opencode",

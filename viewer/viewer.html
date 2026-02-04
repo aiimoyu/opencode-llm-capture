@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Capture Viewer</title>
+    <style>
+        :root {
+            --bg-canvas: #0d1117;
+            --bg-canvas-subtle: #161b22;
+            --bg-border: #30363d;
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+            --accent-blue: #58a6ff;
+            --accent-green: #238636;
+            --accent-red: #da3633;
+            --font-mono: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+            --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-canvas);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+            font-size: 14px;
+        }
+
+        /* ========== SCREEN 1: Session Selector ========== */
+        #screen-welcome {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--bg-canvas);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        #screen-welcome.hidden {
+            display: none;
+        }
+
+        .welcome-title {
+            font-size: 28px;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+
+        .welcome-subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+            font-size: 14px;
+        }
+
+        #session-selector-container {
+            width: 100%;
+            max-width: 800px;
+            max-height: 60vh;
+            overflow-y: auto;
+            border: 1px solid var(--bg-border);
+            border-radius: 8px;
+            background-color: var(--bg-canvas-subtle);
+        }
+
+        .session-item {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--bg-border);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .session-item:last-child {
+            border-bottom: none;
+        }
+
+        .session-item:hover {
+            background-color: #1f2428;
+        }
+
+        .session-name {
+            font-family: var(--font-mono);
+            font-size: 14px;
+            color: var(--accent-blue);
+        }
+
+        .session-meta {
+            color: var(--text-secondary);
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .session-count {
+            background-color: rgba(88, 166, 255, 0.1);
+            color: var(--accent-blue);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .welcome-controls {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn-large {
+            background-color: #21262d;
+            color: var(--text-primary);
+            border: 1px solid var(--bg-border);
+            padding: 10px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: var(--font-sans);
+        }
+
+        .btn-large:hover {
+            background-color: #30363d;
+            border-color: #8b949e;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-blue);
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background-color: #4693e6;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--bg-border);
+            border-top-color: var(--accent-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        #scanning-msg {
+            color: var(--text-secondary);
+            margin-top: 10px;
+        }
+
+        /* ========== Main App Layout ========== */
+        #app-container {
+            display: none;
+            width: 100%;
+            height: 100%;
+        }
+
+        #app-container.visible {
+            display: flex;
+        }
+
+        /* Sidebar */
+        #sidebar {
+            width: 300px;
+            background-color: var(--bg-canvas-subtle);
+            border-right: 1px solid var(--bg-border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        #session-header {
+            padding: 15px;
+            border-bottom: 1px solid var(--bg-border);
+            background-color: rgba(88, 166, 255, 0.05);
+        }
+
+        #session-header-name {
+            font-family: var(--font-mono);
+            font-size: 13px;
+            color: var(--accent-blue);
+            margin-bottom: 5px;
+            word-break: break-all;
+        }
+
+        #session-header-meta {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        #sidebar-controls {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--bg-border);
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-small {
+            background-color: #21262d;
+            color: var(--text-secondary);
+            border: 1px solid var(--bg-border);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-small:hover {
+            background-color: #30363d;
+            color: var(--text-primary);
+        }
+
+        #file-list {
+            flex: 1;
+            overflow-y: auto;
+            list-style: none;
+        }
+
+        .file-item {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--bg-border);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .file-item:hover {
+            background-color: #1f2428;
+        }
+
+        .file-item.active {
+            background-color: rgba(88, 166, 255, 0.1);
+            border-left: 3px solid var(--accent-blue);
+        }
+
+        .file-meta {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .file-id {
+            font-family: var(--font-mono);
+            font-weight: bold;
+            color: var(--accent-blue);
+        }
+
+        .file-status {
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        .status-200 {
+            background-color: rgba(35, 134, 54, 0.2);
+            color: #3fb950;
+        }
+
+        .status-error {
+            background-color: rgba(218, 54, 51, 0.2);
+            color: #f85149;
+        }
+
+        /* Stats Bar */
+        #stats-bar {
+            background-color: var(--bg-canvas-subtle);
+            border-bottom: 1px solid var(--bg-border);
+            padding: 10px 20px;
+            gap: 20px;
+            display: none;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--text-primary);
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Main Content */
+        #main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #empty-state {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            font-size: 1.2em;
+        }
+
+        #content-area {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        header {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--bg-border);
+            background-color: var(--bg-canvas-subtle);
+        }
+
+        h2 {
+            font-size: 16px;
+            margin-bottom: 5px;
+            word-break: break-all;
+            font-family: var(--font-mono);
+        }
+
+        .meta-tags span {
+            margin-right: 15px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            background-color: var(--bg-canvas-subtle);
+            border-bottom: 1px solid var(--bg-border);
+            padding: 0 20px;
+        }
+
+        .tab {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            color: var(--text-secondary);
+        }
+
+        .tab.active {
+            color: var(--text-primary);
+            border-bottom-color: var(--accent-blue);
+        }
+
+        .tab:hover {
+            color: var(--text-primary);
+        }
+
+        /* Panels */
+        .panel {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: none;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        /* Conversation View */
+        .message {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid var(--bg-border);
+        }
+
+        .role-user {
+            background-color: rgba(56, 139, 253, 0.1);
+            border-color: rgba(56, 139, 253, 0.2);
+        }
+
+        .role-assistant {
+            background-color: rgba(48, 54, 61, 0.5);
+        }
+
+        .role-system {
+            background-color: rgba(248, 81, 73, 0.1);
+            border-color: rgba(248, 81, 73, 0.2);
+        }
+
+        .role-tool {
+            background-color: rgba(88, 166, 255, 0.08);
+            border-color: rgba(88, 166, 255, 0.2);
+        }
+
+        .message-role {
+            font-weight: bold;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            font-size: 11px;
+            opacity: 0.7;
+            letter-spacing: 0.5px;
+        }
+
+        .message-content {
+            white-space: pre-wrap;
+            line-height: 1.5;
+            font-family: var(--font-mono);
+            font-size: 13px;
+        }
+
+        /* JSON View */
+        pre {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            background-color: #0d1117;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid var(--bg-border);
+            overflow-x: auto;
+        }
+
+        /* Metadata Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        td,
+        th {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid var(--bg-border);
+        }
+
+        th {
+            color: var(--text-secondary);
+            font-weight: normal;
+            width: 150px;
+        }
+
+        td {
+            font-family: var(--font-mono);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ========== SCREEN 1: Welcome & Session Selector ========== -->
+    <div id="screen-welcome">
+        <div class="welcome-title">LLM Capture Viewer</div>
+        <div class="welcome-subtitle">Select a folder to view captured sessions</div>
+
+        <div id="folder-selector" style="margin-bottom: 30px;">
+            <input type="file" id="inp-folder" webkitdirectory directory multiple style="display:none">
+            <button id="btn-select-folder" class="btn-large btn-primary">Select Log Folder</button>
+            <div id="selected-path"
+                style="margin-top: 10px; color: var(--text-secondary); font-size: 12px; font-family: var(--font-mono);">
+            </div>
+        </div>
+
+        <div id="scanning-indicator" style="display: none; flex-direction: column; align-items: center;">
+            <div class="loading-spinner"></div>
+            <div id="scanning-msg">Scanning for sessions...</div>
+        </div>
+
+        <div id="session-list-wrapper" style="width: 100%; max-width: 800px; display: none;">
+            <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: var(--text-secondary); font-size: 13px;">Available Sessions</span>
+                <button id="btn-rescan" class="btn-small">Rescan</button>
+            </div>
+            <div id="session-selector-container"></div>
+            <div class="welcome-controls">
+                <button id="btn-change-folder" class="btn-large">Change Folder</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== SCREEN 2: Main Application ========== -->
+    <div id="app-container">
+        <div id="sidebar">
+            <div id="session-header">
+                <div id="session-header-name">-</div>
+                <div id="session-header-meta">-</div>
+            </div>
+            <div id="sidebar-controls">
+                <button id="btn-back" class="btn-small">← Back to Sessions</button>
+            </div>
+            <ul id="file-list"></ul>
+        </div>
+
+        <div id="main">
+            <div id="stats-bar">
+                <div class="stat-item">
+                    <span class="stat-value" id="stat-total">0</span>
+                    <span class="stat-label">Requests</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="stat-duration">0ms</span>
+                    <span class="stat-label">Avg Duration</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="stat-types">0 / 0</span>
+                    <span class="stat-label">Stream / JSON</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="stat-models">-</span>
+                    <span class="stat-label">Models</span>
+                </div>
+            </div>
+            <div id="empty-state">Select a request to view details</div>
+            <div id="content-area">
+                <header>
+                    <h2 id="req-url">POST /v1/chat/completions</h2>
+                    <div class="meta-tags">
+                        <span id="req-time">2023-10-27 10:00:00</span>
+                        <span id="req-duration">120ms</span>
+                        <span id="req-type">json</span>
+                    </div>
+                </header>
+
+                <div class="tabs">
+                    <div class="tab active" onclick="switchTab('conversation')">Conversation</div>
+                    <div class="tab" onclick="switchTab('raw')">Raw Data</div>
+                    <div class="tab" onclick="switchTab('metadata')">Metadata</div>
+                </div>
+
+                <div id="panel-conversation" class="panel active"></div>
+                <div id="panel-raw" class="panel">
+                    <pre id="json-viewer"></pre>
+                </div>
+                <div id="panel-metadata" class="panel">
+                    <table id="meta-table"></table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== PARSER FUNCTIONS (adapted from parser.ts) ==========
+
+        function parseRequestMessages(messages) {
+            if (!Array.isArray(messages)) return [];
+
+            return messages.map((msg) => {
+                const parsed = {
+                    role: msg.role,
+                };
+
+                if (msg.content) {
+                    parsed.content = msg.content;
+                }
+
+                if (msg.tool_calls && Array.isArray(msg.tool_calls)) {
+                    parsed.tool_calls = msg.tool_calls.map((tc) => ({
+                        id: tc.id,
+                        type: tc.type,
+                        function: {
+                            name: tc.function?.name || "",
+                            arguments: tc.function?.arguments || "",
+                        },
+                    }));
+                }
+
+                if (msg.tool_call_id) {
+                    parsed.tool_call_id = msg.tool_call_id;
+                }
+
+                if (msg.name) {
+                    parsed.name = msg.name;
+                }
+
+                return parsed;
+            });
+        }
+
+        function parseSSEStreamToMessage(sseLines) {
+            const message = {
+                role: "assistant",
+                content: "",
+            };
+
+            const toolCallsMap = new Map();
+
+            for (const line of sseLines) {
+                if (!line.startsWith("data: ")) continue;
+
+                const jsonStr = line.slice(6);
+                if (jsonStr === "[DONE]") continue;
+
+                try {
+                    const chunk = JSON.parse(jsonStr);
+                    const delta = chunk.choices?.[0]?.delta;
+                    if (!delta) continue;
+
+                    if (delta.content) {
+                        message.content += delta.content;
+                    }
+
+                    if (delta.tool_calls && Array.isArray(delta.tool_calls)) {
+                        for (const tc of delta.tool_calls) {
+                            const index = tc.index ?? 0;
+                            let existing = toolCallsMap.get(index);
+                            if (!existing) {
+                                existing = {
+                                    id: tc.id || "",
+                                    type: tc.type || "function",
+                                    function: { name: "", arguments: "" },
+                                };
+                                toolCallsMap.set(index, existing);
+                            }
+
+                            if (tc.id) existing.id = tc.id;
+                            if (tc.type) existing.type = tc.type;
+                            if (tc.function?.name) {
+                                existing.function.name += tc.function.name;
+                            }
+                            if (tc.function?.arguments) {
+                                existing.function.arguments += tc.function.arguments;
+                            }
+                        }
+                    }
+                } catch {
+                    // ignore
+                }
+            }
+
+            if (!message.content) {
+                delete message.content;
+            }
+
+            if (toolCallsMap.size > 0) {
+                message.tool_calls = Array.from(toolCallsMap.values())
+                    .filter((tc) => tc.id && tc.function?.name)
+                    .map((tc) => tc);
+            }
+
+            return message;
+        }
+
+        function parseLogToConversation(logObj) {
+            const requestMessages = parseRequestMessages(
+                logObj?.request?.body?.messages || []
+            );
+
+            let responseMessage = { role: "assistant" };
+
+            if (
+                logObj?.response?.body?.type === "sse-stream" &&
+                Array.isArray(logObj.response.body.preview)
+            ) {
+                responseMessage = parseSSEStreamToMessage(logObj.response.body.preview);
+            } else if (logObj?.response?.body?.choices?.[0]?.message) {
+                const msg = logObj.response.body.choices[0].message;
+                responseMessage = {
+                    role: msg.role || "assistant",
+                    content: msg.content || undefined,
+                    tool_calls: msg.tool_calls || undefined,
+                };
+            }
+
+            return {
+                request: {
+                    messages: requestMessages,
+                },
+                response: {
+                    message: responseMessage,
+                },
+            };
+        }
+
+        // ========== STATE ==========
+        let currentFolderFiles = [];
+        let sessions = []; // Array of { name, files, count, dateRange }
+        let currentSession = null;
+        let filesData = [];
+        let serverMode = false;
+
+        // ========== UI ELEMENTS ==========
+        const screenWelcome = document.getElementById('screen-welcome');
+        const appContainer = document.getElementById('app-container');
+        const folderSelector = document.getElementById('folder-selector');
+        const scanningIndicator = document.getElementById('scanning-indicator');
+        const scanningMsg = document.getElementById('scanning-msg');
+        const sessionListWrapper = document.getElementById('session-list-wrapper');
+        const sessionContainer = document.getElementById('session-selector-container');
+        const selectedPathDiv = document.getElementById('selected-path');
+
+        const inpFolder = document.getElementById('inp-folder');
+        const btnSelectFolder = document.getElementById('btn-select-folder');
+        const btnChangeFolder = document.getElementById('btn-change-folder');
+        const btnRescan = document.getElementById('btn-rescan');
+        const btnBack = document.getElementById('btn-back');
+
+        // ========== INITIALIZATION ==========
+        (async function init() {
+            // Check for server mode
+            try {
+                const resp = await fetch('/api/sessions', { method: 'HEAD' });
+                if (resp.ok) {
+                    serverMode = true;
+                    enableServerMode();
+                } else {
+                    // Determine if we are on localhost but maybe api is down or different path
+                    // For now, if HEAD fails, assume file mode
+                }
+            } catch (e) {
+                // Fetch failed, assume file mode
+            }
+        })();
+
+        function enableServerMode() {
+            // Update UI for server mode
+            folderSelector.style.display = 'none';
+            btnChangeFolder.style.display = 'none'; // No changing folders in server mode
+            btnRescan.textContent = 'Refresh';
+
+            document.querySelector('.welcome-subtitle').textContent = 'Viewing sessions from local server';
+
+            // Auto-load sessions
+            scanSessions();
+
+            // Start polling (2s interval)
+            setInterval(() => {
+                if (document.hidden) return; // Don't poll if tab is background
+
+                // If we are in session list view (welcome screen visible)
+                if (!screenWelcome.classList.contains('hidden')) {
+                    scanSessions(true);
+                }
+                // If we are in session details view (app container visible)
+                else if (currentSession && currentSession.name) {
+                    loadSessionFilesFromServer(currentSession.name, true);
+                }
+            }, 2000);
+        }
+
+        // ========== EVENT HANDLERS ==========
+        btnSelectFolder.addEventListener('click', () => inpFolder.click());
+        btnChangeFolder.addEventListener('click', () => inpFolder.click());
+        btnRescan.addEventListener('click', () => scanSessions());
+        btnBack.addEventListener('click', () => showWelcomeScreen());
+
+        inpFolder.addEventListener('change', async (e) => {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+
+            currentFolderFiles = files;
+
+            // Try to show the folder name
+            const firstFile = files[0];
+            const pathParts = firstFile.webkitRelativePath.split('/');
+            const folderName = pathParts[0];
+            selectedPathDiv.textContent = `📁 ${folderName}`;
+
+            // Reset input
+            inpFolder.value = '';
+
+            // Show scanning UI
+            folderSelector.style.display = 'none';
+            scanningIndicator.style.display = 'flex';
+            sessionListWrapper.style.display = 'none';
+
+            // Scan for sessions
+            await scanSessions();
+        });
+
+        // ========== SESSION SCANNING ==========
+        async function scanSessions(silent = false) {
+            if (!silent) {
+                scanningIndicator.style.display = 'flex';
+                scanningMsg.textContent = serverMode ? "Fetching sessions from server..." : "Scanning for sessions...";
+                sessionListWrapper.style.display = 'none';
+            }
+
+            let fetchedSessions = [];
+
+            if (serverMode) {
+                try {
+                    const resp = await fetch('/api/sessions');
+                    if (!resp.ok) throw new Error('Failed to fetch sessions');
+                    const data = await resp.json();
+
+                    // Map API data to internal session structure
+                    fetchedSessions = data.map(item => ({
+                        name: item.name,
+                        count: item.count,
+                        timestamps: [new Date(item.mtime)], // Use mtime as the timestamp
+                        files: [] // No files yet, will fetch on demand
+                    }));
+
+                    // Sort sessions by newest timestamp first
+                    fetchedSessions.sort((a, b) => {
+                        const tA = a.timestamps[0].getTime();
+                        const tB = b.timestamps[0].getTime();
+                        return tB - tA;
+                    });
+
+                } catch (err) {
+                    console.error("Server scan failed:", err);
+                    if (!silent) alert("Failed to fetch sessions from server.");
+                }
+            } else {
+                // LOCAL FILE MODE
+                // Group files by session
+                const sessionMap = new Map();
+
+                for (const file of currentFolderFiles) {
+                    const pathParts = file.webkitRelativePath.split('/');
+
+                    // Skip non-JSON files and latest.json files
+                    if (!file.name.endsWith('.json') || file.name.startsWith('latest')) {
+                        continue;
+                    }
+
+                    // Find session folder (ses_* only)
+                    let sessionName = null;
+                    let sessionPath = '';
+
+                    for (let i = 0; i < pathParts.length - 1; i++) {
+                        if (pathParts[i].startsWith('ses_')) {
+                            sessionName = pathParts[i];
+                            sessionPath = pathParts.slice(0, i + 1).join('/');
+                            break;
+                        }
+                    }
+
+                    // Only allow ses_ folders
+                    if (!sessionName) continue;
+
+                    if (!sessionMap.has(sessionName)) {
+                        sessionMap.set(sessionName, {
+                            name: sessionName,
+                            path: sessionPath,
+                            files: [],
+                            count: 0,
+                            timestamps: []
+                        });
+                    }
+
+                    sessionMap.get(sessionName).files.push(file);
+                    sessionMap.get(sessionName).count++;
+                }
+
+                // Parse first file of each session to get time range
+                const sessionArray = Array.from(sessionMap.values());
+
+                for (const session of sessionArray) {
+                    // Try to parse timestamps from a few files to estimate range
+                    const sampleFiles = session.files.slice(0, 3);
+                    for (const file of sampleFiles) {
+                        try {
+                            const text = await file.text();
+                            const json = JSON.parse(text);
+                            if (json.metadata?.timestamp) {
+                                session.timestamps.push(new Date(json.metadata.timestamp));
+                            }
+                        } catch (e) { }
+                    }
+                }
+
+                // Sort sessions by newest timestamp first
+                sessionArray.sort((a, b) => {
+                    const tA = a.timestamps.length > 0 ? Math.max(...a.timestamps) : 0;
+                    const tB = b.timestamps.length > 0 ? Math.max(...b.timestamps) : 0;
+                    return tB - tA;
+                });
+
+                fetchedSessions = sessionArray;
+            }
+
+            sessions = fetchedSessions;
+
+            // Update UI
+            if (!silent) {
+                scanningIndicator.style.display = 'none';
+                sessionListWrapper.style.display = 'block';
+            }
+            renderSessionList();
+        }
+
+        function renderSessionList() {
+            sessionContainer.innerHTML = '';
+
+            if (sessions.length === 0) {
+                sessionContainer.innerHTML = `
+                <div style="padding: 40px; text-align: center; color: var(--text-secondary);">
+                    ${serverMode ? 'No sessions returned from server.' : 'No sessions found. Make sure to select a folder containing OpenCode debug logs.'}<br><br>
+                    ${serverMode ? '' : '<span style="font-size: 12px; opacity: 0.7;">Expected structure: folder/ses_*/001.json or folder/YYYY-MM-DD/001.json</span>'}
+                </div>
+            `;
+                return;
+            }
+
+            sessions.forEach((session, index) => {
+                const div = document.createElement('div');
+                div.className = 'session-item';
+
+                // Format time range
+                let timeInfo = '';
+                if (session.timestamps.length > 0) {
+                    const minTime = new Date(Math.min(...session.timestamps));
+                    const maxTime = new Date(Math.max(...session.timestamps));
+                    const sameDay = minTime.toDateString() === maxTime.toDateString();
+
+                    if (sameDay) {
+                        // For server mode, we only have one timestamp usually, so just show that
+                        if (serverMode || minTime.getTime() === maxTime.getTime()) {
+                            timeInfo = `${minTime.toLocaleDateString()} ${minTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                        } else {
+                            timeInfo = `${minTime.toLocaleDateString()} ${minTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${maxTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                        }
+                    } else {
+                        timeInfo = `${minTime.toLocaleDateString()} - ${maxTime.toLocaleDateString()}`;
+                    }
+                }
+
+                div.innerHTML = `
+                <div>
+                    <div class="session-name">${escapeHtml(session.name)}</div>
+                    <div class="session-meta">${session.count} requests${timeInfo ? ' · ' + timeInfo : ''}</div>
+                </div>
+                <div class="session-count">${session.count}</div>
+            `;
+
+                div.onclick = () => loadSession(index);
+                sessionContainer.appendChild(div);
+            });
+        }
+
+        // ========== SESSION LOADING ==========
+        async function loadSession(sessionIndex) {
+            const session = sessions[sessionIndex];
+            if (!session) return;
+
+            currentSession = session;
+
+            // Update session header
+            document.getElementById('session-header-name').textContent = session.name;
+            document.getElementById('session-header-meta').textContent = `${session.count} requests`;
+
+            // Show app, hide welcome
+            screenWelcome.classList.add('hidden');
+            appContainer.classList.add('visible');
+
+            // Load files
+            if (serverMode) {
+                await loadSessionFilesFromServer(session.name);
+            } else {
+                await loadSessionFiles(session.files);
+            }
+        }
+
+        async function loadSessionFilesFromServer(sessionName, silent = false) {
+            if (!silent) {
+                filesData = [];
+                const fileListEl = document.getElementById('file-list');
+                fileListEl.innerHTML = '<li style="padding:10px; color:var(--text-secondary)">Fetching files...</li>';
+            }
+
+            try {
+                const resp = await fetch(`/api/session/${sessionName}`);
+                if (!resp.ok) throw new Error("Failed to load session files");
+                const data = await resp.json();
+
+                // Map to internal filesData structure
+                filesData = data.map(item => ({
+                    name: item.name,
+                    data: item.data // The JSON content is already in 'data' property
+                }));
+
+                processLoadedFiles(silent);
+
+            } catch (err) {
+                console.error("Load session error:", err);
+                if (!silent) {
+                    const fileListEl = document.getElementById('file-list');
+                    fileListEl.innerHTML = '<li style="padding:10px; color:var(--accent-red)">Error loading session files.</li>';
+                }
+            }
+        }
+
+        async function loadSessionFiles(files) {
+            filesData = [];
+            const fileListEl = document.getElementById('file-list');
+            fileListEl.innerHTML = '<li style="padding:10px; color:var(--text-secondary)">Loading...</li>';
+
+            const validFiles = files.filter(f =>
+                f.name.endsWith('.json') &&
+                !f.name.startsWith('latest')
+            );
+
+            // Process in chunks
+            const chunk = 50;
+            for (let i = 0; i < validFiles.length; i += chunk) {
+                const slice = validFiles.slice(i, i + chunk);
+                await Promise.all(slice.map(readAndParse));
+                if (i + chunk < validFiles.length) await new Promise(r => setTimeout(r, 0));
+            }
+
+            processLoadedFiles();
+        }
+
+        function processLoadedFiles(silent = false) {
+            // Sort by TIMESTAMP (Newest First)
+            filesData.sort((a, b) => {
+                const tA = new Date(a.data.metadata?.timestamp || 0).getTime();
+                const tB = new Date(b.data.metadata?.timestamp || 0).getTime();
+                return tB - tA;
+            });
+
+            renderFileList(silent);
+            updateStats();
+        }
+
+        function readAndParse(file) {
+            return new Promise(resolve => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const json = JSON.parse(e.target.result);
+                        if (json.metadata && json.request && json.response) {
+                            filesData.push({ name: file.name, data: json });
+                        }
+                    } catch (err) {
+                        console.error("Failed to parse", file.name);
+                    }
+                    resolve();
+                };
+                reader.readAsText(file);
+            });
+        }
+
+        function showWelcomeScreen() {
+            screenWelcome.classList.remove('hidden');
+            appContainer.classList.remove('visible');
+
+            // Reset views
+            if (sessions.length > 0) { // Changed condition to check sessions length for server mode support
+                if (serverMode) {
+                    folderSelector.style.display = 'none';
+                } else {
+                    // In file mode, show selector if we want to change, but if we have sessions we show list
+                    // But wait, the original code had: if (currentFolderFiles.length > 0) ...
+                    // Let's stick to the behavior: if we have scanned sessions, show the list
+                }
+
+                scanningIndicator.style.display = 'none';
+                sessionListWrapper.style.display = 'block';
+            }
+        }
+
+        // ========== RENDERING ==========
+        function renderFileList(silent = false) {
+            const fileListEl = document.getElementById('file-list');
+
+            let activeFileName = null;
+            if (silent) {
+                const activeEl = fileListEl.querySelector('.file-item.active');
+                if (activeEl) activeFileName = activeEl.getAttribute('data-filename');
+            }
+
+            fileListEl.innerHTML = '';
+
+            if (filesData.length === 0) {
+                fileListEl.innerHTML = '<li style="padding:20px; text-align:center; color:var(--text-secondary)">No valid logs found</li>';
+                return;
+            }
+
+            filesData.forEach((file, index) => {
+                const li = document.createElement('li');
+                li.className = 'file-item';
+                if (file.name === activeFileName) li.classList.add('active');
+                li.setAttribute('data-filename', file.name);
+
+                const meta = file.data.metadata;
+                const statusClass = (file.data.response.status >= 200 && file.data.response.status < 300)
+                    ? 'status-200' : 'status-error';
+
+                const date = new Date(meta.timestamp);
+                const timeStr = date.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+                li.innerHTML = `
+                <div class="file-meta">
+                    <span class="file-id">#${meta.id} <span style="color:var(--text-secondary); font-weight:normal; margin-left:5px">${timeStr}</span></span>
+                    <span style="font-size:11px; opacity:0.7;">${meta.responseType} · ${formatDuration(meta.durationMs)}</span>
+                </div>
+                <div class="file-status ${statusClass}">${file.data.response.status}</div>
+            `;
+                li.onclick = () => selectFile(index);
+                fileListEl.appendChild(li);
+            });
+        }
+
+        function formatDuration(ms) {
+            if (!ms) return '-';
+            return ms > 1000 ? (ms / 1000).toFixed(1) + 's' : ms + 'ms';
+        }
+
+        function selectFile(index) {
+            for (const el of document.querySelectorAll('.file-item')) {
+                el.classList.remove('active');
+            }
+            document.querySelectorAll('.file-item')[index].classList.add('active');
+
+            const data = filesData[index].data;
+
+            document.getElementById('empty-state').style.display = 'none';
+            document.getElementById('content-area').style.display = 'flex';
+
+            document.getElementById('req-url').textContent = `${data.metadata.method} ${data.metadata.url}`;
+            document.getElementById('req-time').textContent = new Date(data.metadata.timestamp).toLocaleString();
+            document.getElementById('req-duration').textContent = `${data.metadata.durationMs}ms`;
+            document.getElementById('req-type').textContent = data.metadata.responseType;
+
+            document.getElementById('json-viewer').textContent = JSON.stringify(data, null, 2);
+            renderMetadata(data);
+            renderConversation(data);
+        }
+
+        function renderMetadata(data) {
+            const table = document.getElementById('meta-table');
+            table.innerHTML = '';
+
+            const addRow = (k, v) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<th>${k}</th><td>${v}</td>`;
+                table.appendChild(tr);
+            };
+
+            const flatMeta = { ...data.metadata };
+            for (const [k, v] of Object.entries(flatMeta)) {
+                addRow(k, v);
+            }
+
+            if (data.response.headers) {
+                addRow("Response Headers", Object.keys(data.response.headers).length + " items");
+            }
+        }
+
+        function renderConversation(data) {
+            const container = document.getElementById('panel-conversation');
+            container.innerHTML = '';
+
+            // Use the parser to get clean conversation structure
+            const conversation = parseLogToConversation(data);
+
+            // Display all messages from request
+            for (const msg of conversation.request.messages) {
+                const div = document.createElement('div');
+                div.className = `message role-${msg.role}`;
+                div.innerHTML = `
+                <div class="message-role">${msg.role}</div>
+                <div class="message-content">${escapeHtml(msg.content || '')}</div>
+            `;
+                container.appendChild(div);
+
+                // If this message has tool_calls, show them
+                if (msg.tool_calls && msg.tool_calls.length > 0) {
+                    const toolDiv = document.createElement('div');
+                    toolDiv.className = `message role-tool`;
+                    toolDiv.innerHTML = `
+                    <div class="message-role">tool_calls</div>
+                    <div class="message-content">${escapeHtml(formatToolCalls(msg.tool_calls))}</div>
+                `;
+                    container.appendChild(toolDiv);
+                }
+            }
+
+            // Display response message
+            const responseMsg = conversation.response.message;
+            if (responseMsg.content || (responseMsg.tool_calls && responseMsg.tool_calls.length > 0)) {
+                const div = document.createElement('div');
+                div.className = `message role-${responseMsg.role}`;
+
+                const contentToShow = responseMsg.content || '';
+
+                div.innerHTML = `
+                <div class="message-role">${responseMsg.role}</div>
+                <div class="message-content">${escapeHtml(contentToShow)}</div>
+            `;
+                container.appendChild(div);
+
+                // If response has tool_calls, show them in a separate block
+                if (responseMsg.tool_calls && responseMsg.tool_calls.length > 0) {
+                    const toolDiv = document.createElement('div');
+                    toolDiv.className = `message role-tool`;
+                    toolDiv.innerHTML = `
+                    <div class="message-role">tool_calls</div>
+                    <div class="message-content">${escapeHtml(formatToolCalls(responseMsg.tool_calls))}</div>
+                `;
+                    container.appendChild(toolDiv);
+                }
+            }
+        }
+
+        function formatToolCalls(toolCalls) {
+            return toolCalls.map((tool, index) => {
+                const name = tool.function?.name || tool.name || `tool_${index}`;
+                const args = tool.function?.arguments || tool.arguments || '';
+                const formattedArgs = formatToolArguments(args);
+                const idPart = tool.id ? ` (id: ${tool.id})` : '';
+                return `#${index + 1} ${name}${idPart}\n${formattedArgs}`;
+            }).join('\n\n');
+        }
+
+        function formatToolArguments(args) {
+            if (args === undefined || args === null) return '(no arguments)';
+            if (typeof args !== 'string') {
+                try {
+                    return JSON.stringify(args, null, 2);
+                } catch (e) {
+                    return String(args);
+                }
+            }
+            if (args.trim() === '') return '(no arguments)';
+            try {
+                return JSON.stringify(JSON.parse(args), null, 2);
+            } catch (e) {
+                return args;
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function updateStats() {
+            const total = filesData.length;
+            if (total === 0) return;
+
+            let totalDuration = 0;
+            let streamCount = 0;
+            let jsonCount = 0;
+            const models = new Set();
+
+            filesData.forEach(f => {
+                const meta = f.data.metadata;
+                totalDuration += (meta.durationMs || 0);
+
+                if (meta.responseType === 'stream' || (f.data.response.body && f.data.response.body.type === 'sse-stream')) {
+                    streamCount++;
+                } else {
+                    jsonCount++;
+                }
+
+                try {
+                    let model = null;
+                    if (f.data.request.body && f.data.request.body.model) {
+                        model = f.data.request.body.model;
+                    } else if (typeof f.data.request.body === 'string') {
+                        const parsed = JSON.parse(f.data.request.body);
+                        if (parsed.model) model = parsed.model;
+                    }
+                    if (model) models.add(model);
+                } catch (e) { }
+            });
+
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-duration').textContent = Math.round(totalDuration / total) + 'ms';
+            document.getElementById('stat-types').textContent = `${streamCount} / ${jsonCount}`;
+            document.getElementById('stat-models').textContent = models.size;
+
+            document.getElementById('stats-bar').style.display = 'flex';
+        }
+
+        window.switchTab = function (tabName) {
+            for (const t of document.querySelectorAll('.tab')) {
+                t.classList.remove('active');
+            }
+            for (const p of document.querySelectorAll('.panel')) {
+                p.classList.remove('active');
+            }
+
+            event.target.classList.add('active');
+            document.getElementById(`panel-${tabName}`).classList.add('active');
+        }
+    </script>
+
+</body>
+
+</html>

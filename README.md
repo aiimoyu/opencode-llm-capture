@@ -52,10 +52,99 @@ Each log file contains:
 
 For streaming responses (SSE), the plugin captures a preview of the first 200 lines and provides metadata about the stream.
 
+## Viewer
+
+This project includes a web-based viewer (`viewer/viewer.html`) to explore captured sessions.
+
+### Server Mode (Recommended)
+
+Run the local server to browse sessions without manually selecting folders:
+
+```bash
+# Start the viewer server
+bun run serve
+# OR
+bun viewer/server.ts
+```
+
+Open `http://localhost:3000` in your browser. The viewer will automatically load sessions from `~/.opencode/debug/`.
+
+### File Mode
+
+Open `viewer/viewer.html` directly in your browser. You will be prompted to select a folder containing the logs (e.g., `~/.opencode/debug/` or a specific session folder).
+
+## Log Parsing
+
+This project includes a parser to extract conversation data from captured logs.
+
+### Parser Features
+
+- Extracts request messages (system/user/assistant/tool roles)
+- Reconstructs complete assistant responses from fragmented SSE streams
+- Handles tool_calls split across multiple SSE chunks
+- Outputs clean, normalized JSON structure
+- Comprehensive test coverage
+
+### CLI Usage
+
+```bash
+# Parse single file to JSON
+bun cli.ts log.json
+
+# Parse with text format output
+bun cli.ts log.json -f text -o output.txt
+
+# Parse entire directory (batch mode)
+bun cli.ts sample/ses_xxx/ -o results.json
+
+# Minified JSON output
+bun cli.ts log.json --no-pretty
+```
+
+**CLI Options:**
+- `-i, --input <path>`: Input log file or directory (required)
+- `-o, --output <path>`: Output file (default: `<input>.parsed.<format>`)
+- `-f, --format <format>`: Output format: `json` or `text` (default: `json`)
+- `--no-pretty`: Minify JSON output
+- `-h, --help`: Show help message
+
+### Programmatic Usage
+
+```typescript
+import { parseLogToConversation } from "./parser";
+
+const logData = JSON.parse(await readFile("log.json", "utf-8"));
+const conversation = parseLogToConversation(logData);
+
+// Access parsed data
+console.log(conversation.request.messages);       // All historical messages
+console.log(conversation.response.message);        // Assistant's response
+```
+
+### Output Format
+
+```typescript
+interface ParsedConversation {
+  request: {
+    messages: Message[];  // All historical messages
+  };
+  response: {
+    message: Message;  // The assistant's response
+  };
+}
+
+interface Message {
+  role: "system" | "user" | "assistant" | "tool";
+  content?: string;
+  tool_calls?: ToolCall[];
+  tool_call_id?: string;  // For tool role
+  name?: string;
+}
+```
+
 ## Todos
 
 - [ ] Custom output folder (allow users to specify custom path instead of ~/.opencode/debug)
-- [ ] Visualization (add tools for merging SSE streams, generating timelines, or other analysis views)
 - [ ] Dynamically enable and disable dump
 
 ## License
