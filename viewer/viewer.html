@@ -25,6 +25,30 @@
             padding: 0;
         }
 
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-canvas);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: #30363d;
+            border: 3px solid var(--bg-canvas);
+            border-radius: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background-color: #8b949e;
+        }
+
+        ::-webkit-scrollbar-corner {
+            background: var(--bg-canvas);
+        }
+
         body {
             background-color: var(--bg-canvas);
             color: var(--text-primary);
@@ -84,7 +108,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            transition: background 0.2s;
+            transition: all 0.2s ease;
         }
 
         .session-item:last-child {
@@ -92,7 +116,8 @@
         }
 
         .session-item:hover {
-            background-color: #1f2428;
+            background-color: #21262d;
+            padding-left: 24px;
         }
 
         .session-name {
@@ -393,34 +418,45 @@
 
         /* Conversation View */
         .message {
-            margin-bottom: 20px;
-            padding: 15px;
-            border-radius: 6px;
+            margin-bottom: 24px;
+            padding: 20px;
+            border-radius: 8px;
             border: 1px solid var(--bg-border);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
         }
 
         .role-user {
-            background-color: rgba(56, 139, 253, 0.1);
-            border-color: rgba(56, 139, 253, 0.2);
+            background: linear-gradient(180deg, rgba(56, 139, 253, 0.15) 0%, rgba(56, 139, 253, 0.05) 100%);
+            border-color: rgba(56, 139, 253, 0.3);
+            color: var(--text-primary);
         }
 
         .role-assistant {
-            background-color: rgba(48, 54, 61, 0.5);
+            background-color: var(--bg-canvas-subtle);
+            border-color: var(--bg-border);
+            color: var(--text-primary);
         }
 
         .role-system {
-            background-color: rgba(248, 81, 73, 0.1);
-            border-color: rgba(248, 81, 73, 0.2);
+            background: linear-gradient(180deg, rgba(248, 81, 73, 0.15) 0%, rgba(248, 81, 73, 0.05) 100%);
+            border-color: rgba(248, 81, 73, 0.3);
+            color: var(--text-primary);
         }
 
         .role-tool {
-            background-color: rgba(88, 166, 255, 0.08);
-            border-color: rgba(88, 166, 255, 0.2);
+            background: linear-gradient(180deg, rgba(163, 113, 247, 0.15) 0%, rgba(163, 113, 247, 0.05) 100%);
+            border-color: rgba(163, 113, 247, 0.3);
+            color: var(--text-primary);
         }
 
         .message-role {
             font-weight: bold;
-            margin-bottom: 8px;
+            margin-bottom: 0;
             text-transform: uppercase;
             font-size: 11px;
             opacity: 0.7;
@@ -432,6 +468,123 @@
             line-height: 1.5;
             font-family: var(--font-mono);
             font-size: 13px;
+        }
+
+        /* Sub-boxes for structured content */
+        .sub-box {
+            border: 1px solid var(--bg-border);
+            border-radius: 6px;
+            overflow: hidden;
+            background-color: #0d1117;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .sub-box-header {
+            background-color: rgba(255, 255, 255, 0.05);
+            padding: 4px 10px;
+            font-size: 11px;
+            font-weight: bold;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--bg-border);
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+        }
+
+        .sub-box-content {
+            padding: 10px;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            color: var(--text-primary);
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .generic-block {
+            border: 1px solid var(--bg-border);
+            border-radius: 6px;
+            padding: 10px 12px;
+            background-color: #0d1117;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+            color: var(--text-primary);
+        }
+
+        .generic-block details {
+            margin: 6px 0;
+            padding-left: 8px;
+        }
+
+        .generic-block summary {
+            cursor: pointer;
+            color: var(--accent-blue);
+            font-weight: 600;
+        }
+
+        .generic-block pre {
+            margin: 6px 0 0;
+        }
+
+        .kv-row {
+            margin: 2px 0;
+        }
+
+        .reasoning-box {
+            border-color: rgba(238, 138, 248, 0.3);
+        }
+
+        .reasoning-box .sub-box-header {
+            color: #d2a8ff;
+            background-color: rgba(210, 168, 255, 0.1);
+            border-bottom-color: rgba(238, 138, 248, 0.3);
+        }
+
+        .tool-calls-box {
+            border-color: rgba(88, 166, 255, 0.3);
+        }
+
+        .tool-calls-box .sub-box-header {
+            color: var(--accent-blue);
+            background-color: rgba(88, 166, 255, 0.1);
+            border-bottom-color: rgba(88, 166, 255, 0.3);
+        }
+
+        /* Specific Sub-box Types */
+        .content-box .sub-box-content {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+
+        .meta-box .sub-box-header {
+            padding: 2px 8px;
+            font-size: 10px;
+            opacity: 0.8;
+        }
+
+        .meta-box .sub-box-content {
+            padding: 6px 10px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .code-box .sub-box-content {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            white-space: pre-wrap;
+            color: #a5d6ff;
+            background-color: #0d1117;
+        }
+
+        .output-box .sub-box-content {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: #7ee787;
         }
 
         /* JSON View */
@@ -466,6 +619,66 @@
 
         td {
             font-family: var(--font-mono);
+        }
+
+        /* Copy Button */
+        .btn-copy {
+            background: transparent;
+            border: 1px solid var(--bg-border);
+            color: var(--text-secondary);
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 10px;
+            cursor: pointer;
+            margin-left: auto;
+            /* Push to right */
+            transition: all 0.2s;
+            opacity: 0.7;
+        }
+
+        .btn-copy:hover {
+            background-color: #30363d;
+            color: var(--text-primary);
+            opacity: 1;
+        }
+
+        /* Syntax Highlighting */
+        .hljs-string {
+            color: #a5d6ff;
+        }
+
+        .hljs-number {
+            color: #79c0ff;
+        }
+
+        .hljs-boolean {
+            color: #ff7b72;
+        }
+
+        .hljs-null {
+            color: #ff7b72;
+        }
+
+        .hljs-key {
+            color: #7ee787;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            #app-container.visible {
+                flex-direction: column;
+            }
+
+            #sidebar {
+                width: 100%;
+                height: 30%;
+                border-right: none;
+                border-bottom: 1px solid var(--bg-border);
+            }
+
+            #main {
+                height: 70%;
+            }
         }
     </style>
 </head>
@@ -563,7 +776,60 @@
     </div>
 
     <script>
-        // ========== PARSER FUNCTIONS (adapted from parser.ts) ==========
+        // ========== PARSER REGISTRY ==========
+
+        const parserRegistry = [];
+
+        function registerParser(parser) {
+            if (!parser || typeof parser.match !== "function") return;
+            parserRegistry.push(parser);
+        }
+
+        function selectParser(logObj) {
+            const url = logObj?.metadata?.url || "";
+            for (const parser of parserRegistry) {
+                try {
+                    if (parser.match(url, logObj)) return parser;
+                } catch (e) {
+                    // ignore
+                }
+            }
+            return parserRegistry[0];
+        }
+
+        function flattenContent(content) {
+            if (content === undefined || content === null) return "";
+            if (typeof content === "string") return content;
+
+            if (Array.isArray(content)) {
+                return content
+                    .map((part) => {
+                        if (typeof part === "string") return part;
+                        if (!part || typeof part !== "object") return String(part);
+
+                        if (part.type === "input_text" || part.type === "output_text") {
+                            return part.text || "";
+                        }
+
+                        if (part.type === "text") {
+                            return part.text || part.value || "";
+                        }
+
+                        if (typeof part.text === "string") return part.text;
+                        if (typeof part.content === "string") return part.content;
+                        return "";
+                    })
+                    .filter(Boolean)
+                    .join("");
+            }
+
+            if (typeof content === "object") {
+                if (typeof content.text === "string") return content.text;
+                if (typeof content.content === "string") return content.content;
+            }
+
+            return String(content);
+        }
 
         function parseRequestMessages(messages) {
             if (!Array.isArray(messages)) return [];
@@ -577,15 +843,13 @@
                     parsed.content = msg.content;
                 }
 
+                if (msg.reasoning_content) {
+                    parsed.reasoning_content = msg.reasoning_content;
+                }
+
                 if (msg.tool_calls && Array.isArray(msg.tool_calls)) {
-                    parsed.tool_calls = msg.tool_calls.map((tc) => ({
-                        id: tc.id,
-                        type: tc.type,
-                        function: {
-                            name: tc.function?.name || "",
-                            arguments: tc.function?.arguments || "",
-                        },
-                    }));
+                    // Preserve all fields in tool_calls without filtering
+                    parsed.tool_calls = msg.tool_calls;
                 }
 
                 if (msg.tool_call_id) {
@@ -600,15 +864,83 @@
             });
         }
 
+        function parseInputMessages(input) {
+            if (!Array.isArray(input)) return [];
+
+            const messages = [];
+
+            for (const item of input) {
+                if (!item || typeof item !== "object") continue;
+
+                if (item.role) {
+                    const contentText = flattenContent(item.content);
+                    const msg = { role: item.role };
+
+                    if (contentText) {
+                        msg.content = contentText;
+                    }
+
+                    if (item.reasoning_content) {
+                        msg.reasoning_content = item.reasoning_content;
+                    }
+
+                    if (item.tool_calls && Array.isArray(item.tool_calls)) {
+                        // Preserve all fields in tool_calls without filtering
+                        msg.tool_calls = item.tool_calls;
+                    }
+
+                    messages.push(msg);
+                    continue;
+                }
+
+                if (item.type === "function_call") {
+                    messages.push({
+                        type: "function_call",
+                        name: item.name || "",
+                        call_id: item.call_id || "",
+                        id: item.id || "",
+                        arguments: item.arguments || "",
+                    });
+                    continue;
+                }
+
+                if (item.type === "function_call_output") {
+                    messages.push({
+                        type: "function_call_output",
+                        call_id: item.call_id || "",
+                        output: item.output,
+                    });
+                }
+            }
+
+            return messages;
+        }
+
         function parseSSEStreamToMessage(sseLines) {
             const message = {
                 role: "assistant",
                 content: "",
+                reasoning_content: "",
             };
 
             const toolCallsMap = new Map();
+            let currentEvent = "";
+
+            const appendText = (text, isReasoning) => {
+                if (!text) return;
+                if (isReasoning) {
+                    message.reasoning_content += text;
+                } else {
+                    message.content += text;
+                }
+            };
 
             for (const line of sseLines) {
+                if (line.startsWith("event:")) {
+                    currentEvent = line.slice(6).trim();
+                    continue;
+                }
+
                 if (!line.startsWith("data: ")) continue;
 
                 const jsonStr = line.slice(6);
@@ -616,34 +948,71 @@
 
                 try {
                     const chunk = JSON.parse(jsonStr);
-                    const delta = chunk.choices?.[0]?.delta;
-                    if (!delta) continue;
 
-                    if (delta.content) {
-                        message.content += delta.content;
+                    // Chat Completions style
+                    const delta = chunk.choices?.[0]?.delta;
+                    if (delta) {
+                        if (delta.content) {
+                            message.content += delta.content;
+                        }
+
+                        if (delta.reasoning_content) {
+                            message.reasoning_content += delta.reasoning_content;
+                        }
+
+                        if (delta.tool_calls && Array.isArray(delta.tool_calls)) {
+                            for (const tc of delta.tool_calls) {
+                                const index = tc.index ?? 0;
+                                let existing = toolCallsMap.get(index);
+                                if (!existing) {
+                                    existing = {
+                                        id: tc.id || "",
+                                        type: tc.type || "function",
+                                        function: { name: "", arguments: "" },
+                                    };
+                                    toolCallsMap.set(index, existing);
+                                }
+
+                                if (tc.id) existing.id = tc.id;
+                                if (tc.type) existing.type = tc.type;
+                                if (tc.function?.name) {
+                                    existing.function.name += tc.function.name;
+                                }
+                                if (tc.function?.arguments) {
+                                    existing.function.arguments += tc.function.arguments;
+                                }
+                            }
+                        }
+
+                        continue;
                     }
 
-                    if (delta.tool_calls && Array.isArray(delta.tool_calls)) {
-                        for (const tc of delta.tool_calls) {
-                            const index = tc.index ?? 0;
-                            let existing = toolCallsMap.get(index);
-                            if (!existing) {
-                                existing = {
-                                    id: tc.id || "",
-                                    type: tc.type || "function",
-                                    function: { name: "", arguments: "" },
-                                };
-                                toolCallsMap.set(index, existing);
-                            }
+                    // Responses API style
+                    const isReasoningEvent = currentEvent.includes("reasoning");
+                    const textDelta =
+                        chunk?.delta ??
+                        chunk?.text ??
+                        chunk?.content ??
+                        chunk?.value ??
+                        chunk?.output_text ??
+                        chunk?.output?.text;
 
-                            if (tc.id) existing.id = tc.id;
-                            if (tc.type) existing.type = tc.type;
-                            if (tc.function?.name) {
-                                existing.function.name += tc.function.name;
-                            }
-                            if (tc.function?.arguments) {
-                                existing.function.arguments += tc.function.arguments;
-                            }
+                    if (typeof textDelta === "string") {
+                        appendText(textDelta, isReasoningEvent);
+                    }
+
+                    if (chunk?.type === "function_call" || currentEvent.includes("tool")) {
+                        const toolCall = {
+                            id: chunk?.id || chunk?.call_id || "",
+                            type: "function",
+                            function: {
+                                name: chunk?.name || "",
+                                arguments: chunk?.arguments || "",
+                            },
+                        };
+
+                        if (toolCall.id || toolCall.function.name) {
+                            toolCallsMap.set(toolCallsMap.size, toolCall);
                         }
                     }
                 } catch {
@@ -655,9 +1024,13 @@
                 delete message.content;
             }
 
+            if (!message.reasoning_content) {
+                delete message.reasoning_content;
+            }
+
             if (toolCallsMap.size > 0) {
                 message.tool_calls = Array.from(toolCallsMap.values())
-                    .filter((tc) => tc.id && tc.function?.name)
+                    .filter((tc) => tc.id || tc.function?.name)
                     .map((tc) => tc);
             }
 
@@ -665,25 +1038,9 @@
         }
 
         function parseLogToConversation(logObj) {
-            const requestMessages = parseRequestMessages(
-                logObj?.request?.body?.messages || []
-            );
-
-            let responseMessage = { role: "assistant" };
-
-            if (
-                logObj?.response?.body?.type === "sse-stream" &&
-                Array.isArray(logObj.response.body.preview)
-            ) {
-                responseMessage = parseSSEStreamToMessage(logObj.response.body.preview);
-            } else if (logObj?.response?.body?.choices?.[0]?.message) {
-                const msg = logObj.response.body.choices[0].message;
-                responseMessage = {
-                    role: msg.role || "assistant",
-                    content: msg.content || undefined,
-                    tool_calls: msg.tool_calls || undefined,
-                };
-            }
+            const parser = selectParser(logObj);
+            const requestMessages = parser?.parseRequest?.(logObj) || [];
+            const responseMessage = parser?.parseResponse?.(logObj) || { role: "assistant" };
 
             return {
                 request: {
@@ -1158,10 +1515,6 @@
             for (const [k, v] of Object.entries(flatMeta)) {
                 addRow(k, v);
             }
-
-            if (data.response.headers) {
-                addRow("Response Headers", Object.keys(data.response.headers).length + " items");
-            }
         }
 
         function renderConversation(data) {
@@ -1171,63 +1524,259 @@
             // Use the parser to get clean conversation structure
             const conversation = parseLogToConversation(data);
 
+            // Configuration for known fields - defines Titles and specific Formatters
+            const keyConfig = {
+                'reasoning_content': { title: 'Reasoning', className: 'reasoning-box' },
+                'content': { title: 'Content', className: 'content-box' },
+                'tool_calls': { title: 'Tool Calls', className: 'tool-calls-box', formatter: formatToolCalls },
+                'tool_call_id': { title: 'Tool Call ID', className: 'meta-box' },
+                'output': { title: 'Output', className: 'output-box', formatter: (val) => typeof val === 'string' ? val : JSON.stringify(val, null, 2) },
+                'arguments': { title: 'Arguments', className: 'code-box', formatter: formatToolArguments },
+                'name': { title: 'Name', className: 'meta-box' },
+                'function': { title: 'Function', className: 'code-box', formatter: (val) => JSON.stringify(val, null, 2) },
+                'call_id': { title: 'Call ID', className: 'meta-box' },
+                'id': { title: 'ID', className: 'meta-box' }
+            };
+
+            // Order of display for known fields
+            const displayOrder = ['reasoning_content', 'content', 'tool_calls', 'output', 'tool_call_id', 'call_id', 'name', 'arguments', 'function', 'id'];
+
+            // Helper: Copy to Clipboard
+            const copyToClipboard = (text, btn) => {
+                if (!text) return;
+                navigator.clipboard.writeText(text).then(() => {
+                    const originalText = btn.textContent;
+                    btn.textContent = 'Copied!';
+                    btn.style.color = '#3fb950';
+                    btn.style.borderColor = '#3fb950';
+                    setTimeout(() => {
+                        btn.textContent = originalText;
+                        btn.style.color = '';
+                        btn.style.borderColor = '';
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Failed to copy:', err);
+                });
+            };
+
+            // Helper: Syntax Highlighting for JSON
+            const highlightSyntax = (jsonStr) => {
+                if (!jsonStr) return '';
+                // Only process strings that look like JSON objects or arrays
+                const trimmed = jsonStr.trim();
+                if (!((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']')))) {
+                    // Try to catch raw JSON values but avoid highlighting random text
+                    return escapeHtml(jsonStr);
+                }
+
+                // Simple regex-based highlighter (escapes HTML first to be safe, but we need to run regex on raw string then wrap matches)
+                // Actually, safer to run on raw string and then wrap.
+
+                // Let's rely on a simpler approach: regex replace on the string, but careful about HTML injection.
+                // Since we are generating HTML spans, we need to be careful.
+
+                // Strategy: Tokenize and escape values.
+                return jsonStr.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                    let cls = 'hljs-number';
+                    if (/^"/.test(match)) {
+                        if (/:$/.test(match)) {
+                            cls = 'hljs-key';
+                            // Remove colon for class application, or keep it?
+                            // match is like "key": 
+                            // We want <span class="key">"key"</span>:
+                            return '<span class="' + cls + '">' + escapeHtml(match.slice(0, -1)) + '</span>:';
+                        } else {
+                            cls = 'hljs-string';
+                            return '<span class="' + cls + '">' + escapeHtml(match) + '</span>';
+                        }
+                    } else if (/true|false/.test(match)) {
+                        cls = 'hljs-boolean';
+                    } else if (/null/.test(match)) {
+                        cls = 'hljs-null';
+                    }
+                    return '<span class="' + cls + '">' + match + '</span>';
+                });
+            };
+
+            // Helper function to render a single message
+            const renderMsg = (msg) => {
+                const div = document.createElement('div');
+                const roleClass = msg.role ? `role-${msg.role}` : 'role-unknown';
+                div.className = `message ${roleClass}`;
+
+                const roleLabel = msg.role || msg.type || 'unknown';
+
+                // 1. Role Title
+                const roleDiv = document.createElement('div');
+                roleDiv.className = 'message-role';
+                roleDiv.textContent = roleLabel;
+                div.appendChild(roleDiv);
+
+                // Collect keys to render (Skip role/type as they are the header)
+                const keys = Object.keys(msg).filter(k => k !== 'role' && k !== 'type');
+
+                // Sort keys: Known fields in displayOrder, then others alphabetically
+                keys.sort((a, b) => {
+                    const idxA = displayOrder.indexOf(a);
+                    const idxB = displayOrder.indexOf(b);
+                    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+                    if (idxA !== -1) return -1;
+                    if (idxB !== -1) return 1;
+                    return a.localeCompare(b);
+                });
+
+                let hasContent = false;
+
+                // 2. Render Keys as Sub-Boxes
+                for (const key of keys) {
+                    const val = msg[key];
+                    if (val === undefined || val === null) continue;
+                    if (Array.isArray(val) && val.length === 0) continue;
+                    if (typeof val === 'string' && val.trim() === '') continue;
+
+                    hasContent = true;
+
+                    const config = keyConfig[key] || {};
+                    const title = config.title || key; // Default to key name
+                    const className = config.className || 'generic-box';
+                    const formatter = config.formatter || ((v) => typeof v === 'string' ? v : JSON.stringify(v, null, 2));
+
+                    // Determine content string for copy
+                    let rawContent = val;
+                    if (typeof rawContent !== 'string') {
+                        try { rawContent = JSON.stringify(rawContent, null, 2); } catch (e) { }
+                    }
+
+                    let displayContent = formatter(val);
+                    let isHtml = false;
+
+                    // Apply syntax highlighting
+                    if (className === 'tool-calls-box' || className === 'code-box' || className === 'output-box') {
+                        if (typeof displayContent === 'string' && (displayContent.trim().startsWith('{') || displayContent.trim().startsWith('['))) {
+                            displayContent = highlightSyntax(displayContent);
+                            isHtml = true;
+                        }
+                    }
+
+                    // Fallback escape if not highlighting
+                    if (!isHtml) {
+                        displayContent = escapeHtml(displayContent);
+                    }
+
+                    const subBox = document.createElement('div');
+                    subBox.className = `sub-box ${className}`;
+
+                    // Create Header with Copy Button
+                    const headerDiv = document.createElement('div');
+                    headerDiv.className = 'sub-box-header';
+
+                    const titleSpan = document.createElement('span');
+                    titleSpan.textContent = title;
+                    headerDiv.appendChild(titleSpan);
+
+                    const copyBtn = document.createElement('button');
+                    copyBtn.className = 'btn-copy';
+                    copyBtn.textContent = 'Copy';
+                    copyBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        copyToClipboard(rawContent, copyBtn);
+                    };
+                    headerDiv.appendChild(copyBtn);
+
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = 'sub-box-content';
+                    contentDiv.innerHTML = displayContent;
+
+                    subBox.appendChild(headerDiv);
+                    subBox.appendChild(contentDiv);
+                    div.appendChild(subBox);
+                }
+
+                // 3. Empty State
+                if (!hasContent) {
+                    const empty = document.createElement('div');
+                    empty.className = 'message-content';
+                    empty.style.color = 'var(--text-secondary)';
+                    empty.style.fontStyle = 'italic';
+                    empty.textContent = '(empty)';
+                    div.appendChild(empty);
+                }
+
+                container.appendChild(div);
+            };
+
             // Display all messages from request
             for (const msg of conversation.request.messages) {
-                const div = document.createElement('div');
-                div.className = `message role-${msg.role}`;
-                div.innerHTML = `
-                <div class="message-role">${msg.role}</div>
-                <div class="message-content">${escapeHtml(msg.content || '')}</div>
-            `;
-                container.appendChild(div);
-
-                // If this message has tool_calls, show them
-                if (msg.tool_calls && msg.tool_calls.length > 0) {
-                    const toolDiv = document.createElement('div');
-                    toolDiv.className = `message role-tool`;
-                    toolDiv.innerHTML = `
-                    <div class="message-role">tool_calls</div>
-                    <div class="message-content">${escapeHtml(formatToolCalls(msg.tool_calls))}</div>
-                `;
-                    container.appendChild(toolDiv);
-                }
+                renderMsg(msg);
             }
 
             // Display response message
             const responseMsg = conversation.response.message;
-            if (responseMsg.content || (responseMsg.tool_calls && responseMsg.tool_calls.length > 0)) {
-                const div = document.createElement('div');
-                div.className = `message role-${responseMsg.role}`;
-
-                const contentToShow = responseMsg.content || '';
-
-                div.innerHTML = `
-                <div class="message-role">${responseMsg.role}</div>
-                <div class="message-content">${escapeHtml(contentToShow)}</div>
-            `;
-                container.appendChild(div);
-
-                // If response has tool_calls, show them in a separate block
-                if (responseMsg.tool_calls && responseMsg.tool_calls.length > 0) {
-                    const toolDiv = document.createElement('div');
-                    toolDiv.className = `message role-tool`;
-                    toolDiv.innerHTML = `
-                    <div class="message-role">tool_calls</div>
-                    <div class="message-content">${escapeHtml(formatToolCalls(responseMsg.tool_calls))}</div>
-                `;
-                    container.appendChild(toolDiv);
-                }
+            if (responseMsg) {
+                renderMsg(responseMsg);
             }
         }
 
         function formatToolCalls(toolCalls) {
-            return toolCalls.map((tool, index) => {
-                const name = tool.function?.name || tool.name || `tool_${index}`;
-                const args = tool.function?.arguments || tool.arguments || '';
-                const formattedArgs = formatToolArguments(args);
-                const idPart = tool.id ? ` (id: ${tool.id})` : '';
-                return `#${index + 1} ${name}${idPart}\n${formattedArgs}`;
-            }).join('\n\n');
+            // Display raw JSON for tool_calls without further parsing
+            return JSON.stringify(toolCalls, null, 2);
+        }
+
+        function createDetailsElement(title, content, expanded) {
+            const details = document.createElement('details');
+            if (expanded) details.open = true;
+
+            const summary = document.createElement('summary');
+            summary.textContent = title;
+            details.appendChild(summary);
+
+            if (content instanceof HTMLElement) {
+                details.appendChild(content);
+            } else {
+                const pre = document.createElement('pre');
+                pre.textContent = content;
+                details.appendChild(pre);
+            }
+
+            return details;
+        }
+
+        function renderGenericFields(obj, opts) {
+            if (!obj || typeof obj !== 'object') return null;
+
+            const { collapsedFields, expandedFields } = opts;
+            const wrapper = document.createElement('div');
+            let hasContent = false;
+
+            for (const [key, value] of Object.entries(obj)) {
+                const label = `${key}`;
+                const shouldExpand = expandedFields.has(key);
+                const shouldCollapse = collapsedFields.has(key);
+
+                if (value === null || value === undefined) continue;
+
+                hasContent = true;
+
+                if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+                    const row = document.createElement('div');
+                    row.className = 'kv-row';
+                    row.textContent = `${label}: ${value}`;
+                    wrapper.appendChild(row);
+                    continue;
+                }
+
+                let content;
+                try {
+                    content = JSON.stringify(value, null, 2);
+                } catch (e) {
+                    content = String(value);
+                }
+
+                const details = createDetailsElement(label, content, shouldExpand && !shouldCollapse);
+                wrapper.appendChild(details);
+            }
+
+            return hasContent ? wrapper : null;
         }
 
         function formatToolArguments(args) {
@@ -1256,6 +1805,53 @@
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
         }
+
+        // ========== Protocol Parsers ==========
+
+        const chatCompletionsParser = {
+            id: "chat-completions",
+            match: (url) => typeof url === "string" && url.endsWith("/chat/completions"),
+            parseRequest: (logObj) => parseRequestMessages(logObj?.request?.body?.messages || []),
+            parseResponse: (logObj) => {
+                if (
+                    logObj?.response?.body?.type === "sse-stream" &&
+                    Array.isArray(logObj.response.body.preview)
+                ) {
+                    return parseSSEStreamToMessage(logObj.response.body.preview);
+                }
+
+                if (logObj?.response?.body?.choices?.[0]?.message) {
+                    const msg = logObj.response.body.choices[0].message;
+                    return {
+                        role: msg.role || "assistant",
+                        content: msg.content || undefined,
+                        reasoning_content: msg.reasoning_content || undefined,
+                        tool_calls: msg.tool_calls || undefined,
+                    };
+                }
+
+                return { role: "assistant" };
+            },
+        };
+
+        const responsesParser = {
+            id: "responses",
+            match: (url) => typeof url === "string" && url.endsWith("/responses"),
+            parseRequest: (logObj) => parseInputMessages(logObj?.request?.body?.input || []),
+            parseResponse: (logObj) => {
+                if (
+                    logObj?.response?.body?.type === "sse-stream" &&
+                    Array.isArray(logObj.response.body.preview)
+                ) {
+                    return parseSSEStreamToMessage(logObj.response.body.preview);
+                }
+
+                return { role: "assistant" };
+            },
+        };
+
+        registerParser(chatCompletionsParser);
+        registerParser(responsesParser);
 
         function updateStats() {
             const total = filesData.length;

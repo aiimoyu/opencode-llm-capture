@@ -128,14 +128,32 @@ const server = http.createServer(async (req, res) => {
 
             const fileData = [];
             for (const file of files) {
+                const filePath = path.join(sessionPath, file);
                 try {
-                    const content = fs.readFileSync(path.join(sessionPath, file), 'utf-8');
+                    const content = fs.readFileSync(filePath, 'utf-8');
                     const json = JSON.parse(content);
+
+                    if (!json?.metadata || !json?.request || !json?.response) {
+                        console.warn("[viewer] Invalid log structure", {
+                            file,
+                            filePath,
+                            hasMetadata: Boolean(json?.metadata),
+                            hasRequest: Boolean(json?.request),
+                            hasResponse: Boolean(json?.response),
+                        });
+                        continue;
+                    }
+
                     fileData.push({
                         name: file,
                         data: json
                     });
                 } catch (e) {
+                    console.warn("[viewer] Failed to read/parse log", {
+                        file,
+                        filePath,
+                        error: String(e)
+                    });
                 }
             }
 
