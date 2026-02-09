@@ -33,12 +33,12 @@ This plugin intercepts HTTP requests made by OpenCode to LLM providers (like Ope
 
 ## Usage
 
-The plugin automatically activates when loaded. Logs are saved to `~/.opencode/debug/` by default.
+The plugin automatically activates when loaded. Logs are saved to `~/.config/opencode/opencode-llm-capture/llm-dump/` by default.
 
 ### Session Management
 
-- If a session ID is provided, logs go to `~/.opencode/debug/{sessionID}/`
-- Otherwise, logs are grouped by date: `~/.opencode/debug/{YYYY-MM-DD}/`
+- If a session ID is provided, logs go to `~/.config/opencode/opencode-llm-capture/llm-dump/{sessionID}/`
+- Otherwise, logs are grouped by date: `~/.config/opencode/opencode-llm-capture/llm-dump/{YYYY-MM-DD}/`
 
 ### File Structure
 
@@ -67,11 +67,11 @@ bun run serve
 bun viewer/server.ts
 ```
 
-Open `http://localhost:3000` in your browser. The viewer will automatically load sessions from `~/.opencode/debug/`.
+Open `http://localhost:3000` in your browser. The viewer will automatically load sessions from `~/.config/opencode/opencode-llm-capture/llm-dump/`.
 
 ### File Mode
 
-Open `viewer/viewer.html` directly in your browser. You will be prompted to select a folder containing the logs (e.g., `~/.opencode/debug/` or a specific session folder).
+Open `viewer/viewer.html` directly in your browser. You will be prompted to select a folder containing the logs (e.g., `~/.config/opencode/opencode-llm-capture/llm-dump/` or a specific session folder).
 
 ## Log Parsing
 
@@ -144,7 +144,7 @@ interface Message {
 
 ## Todos
 
-- [ ] Custom output folder (allow users to specify custom path instead of ~/.opencode/debug)
+- [ ] Custom output folder (allow users to specify custom path instead of ~/.config/opencode/opencode-llm-capture/llm-dump)
 - [ ] Dynamically enable and disable dump
 
 ## License

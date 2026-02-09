@@ -4,7 +4,7 @@ import { homedir } from "os";
 import { join, dirname } from "path";
 
 export default (async ({ directory }) => {
-  const baseDir = join(homedir(), ".opencode", "debug");
+  const baseDir = join(homedir(), ".config", "opencode", "opencode-llm-capture", "llm-dump");
   const ensureDir = async (d: string) =>
     mkdir(d, { recursive: true }).catch(() => { });
 
@@ -37,6 +37,11 @@ export default (async ({ directory }) => {
 
     let counter = 0;
     globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const shouldDump = process.env.OPENCODE_LLM_CAPTURE === 'true' || process.env.OPENCODE_LLM_CAPTURE === '1';
+      if (!shouldDump) {
+        return originalFetch(input, init);
+      }
+
       counter++;
       // Snapshot URL & method safely
       let url: string;

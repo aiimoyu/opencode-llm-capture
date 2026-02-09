@@ -4,7 +4,7 @@ import * as path from 'path';
 import * as os from 'os';
 
 const PORT = 3000;
-const LOG_DIR = path.join(os.homedir(), '.opencode', 'debug');
+const LOG_DIR = path.join(os.homedir(), '.config', 'opencode', 'opencode-llm-capture', 'llm-dump');
 const VIEWER_PATH = path.join(__dirname, 'viewer.html');
 
 // Helper for CORS and JSON headers
