@@ -534,6 +534,45 @@
             margin: 2px 0;
         }
 
+        .raw-header {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 10px;
+        }
+
+        /* Request Parameters */
+        .request-params {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--bg-border);
+        }
+
+        .param-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background-color: rgba(88, 166, 255, 0.1);
+            border: 1px solid rgba(88, 166, 255, 0.2);
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+
+        .param-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .param-value {
+            color: var(--accent-blue);
+            font-family: var(--font-mono);
+            font-weight: 600;
+        }
+
+        /* Tools Panel uses same card style as Conversation */
         .reasoning-box {
             border-color: rgba(238, 138, 248, 0.3);
         }
@@ -756,16 +795,25 @@
                         <span id="req-duration">120ms</span>
                         <span id="req-type">json</span>
                     </div>
+                    <div class="request-params" id="request-params">
+                    </div>
                 </header>
 
                 <div class="tabs">
                     <div class="tab active" onclick="switchTab('conversation')">Conversation</div>
+                    <div class="tab" onclick="switchTab('tools')">Tools</div>
                     <div class="tab" onclick="switchTab('raw')">Raw Data</div>
                     <div class="tab" onclick="switchTab('metadata')">Metadata</div>
                 </div>
 
                 <div id="panel-conversation" class="panel active"></div>
+                <div id="panel-tools" class="panel">
+                    <div id="tools-container"></div>
+                </div>
                 <div id="panel-raw" class="panel">
+                    <div class="raw-header">
+                        <button id="btn-copy-raw" class="btn-small">Copy All</button>
+                    </div>
                     <pre id="json-viewer"></pre>
                 </div>
                 <div id="panel-metadata" class="panel">
@@ -1123,6 +1171,22 @@
         btnChangeFolder.addEventListener('click', () => inpFolder.click());
         btnRescan.addEventListener('click', () => scanSessions());
         btnBack.addEventListener('click', () => showWelcomeScreen());
+
+        const btnCopyRaw = document.getElementById('btn-copy-raw');
+        btnCopyRaw.addEventListener('click', () => {
+            const jsonText = document.getElementById('json-viewer').textContent;
+            navigator.clipboard.writeText(jsonText).then(() => {
+                const originalText = btnCopyRaw.textContent;
+                btnCopyRaw.textContent = 'Copied!';
+                btnCopyRaw.style.color = '#3fb950';
+                setTimeout(() => {
+                    btnCopyRaw.textContent = originalText;
+                    btnCopyRaw.style.color = '';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+            });
+        });
 
         inpFolder.addEventListener('change', async (e) => {
             const files = Array.from(e.target.files);
@@ -1497,8 +1561,45 @@
             document.getElementById('req-type').textContent = data.metadata.responseType;
 
             document.getElementById('json-viewer').textContent = JSON.stringify(data, null, 2);
+            renderRequestParams(data);
+            renderTools(data);
             renderMetadata(data);
             renderConversation(data);
+        }
+
+        function renderRequestParams(data) {
+            const container = document.getElementById('request-params');
+            container.innerHTML = '';
+
+            const body = data?.request?.body;
+            if (!body) return;
+
+            const params = [];
+            if (body.model) params.push({ label: 'model', value: body.model });
+            if (body.temperature !== undefined) params.push({ label: 'temperature', value: body.temperature });
+            if (body.reasoning_effort) params.push({ label: 'reasoning_effort', value: body.reasoning_effort });
+            if (body.max_tokens) params.push({ label: 'max_tokens', value: body.max_tokens });
+            if (body.top_p) params.push({ label: 'top_p', value: body.top_p });
+            if (body.stream !== undefined) params.push({ label: 'stream', value: body.stream });
+
+            if (params.length === 0) return;
+
+            params.forEach(param => {
+                const item = document.createElement('div');
+                item.className = 'param-item';
+
+                const labelSpan = document.createElement('span');
+                labelSpan.className = 'param-label';
+                labelSpan.textContent = param.label + ':';
+
+                const valueSpan = document.createElement('span');
+                valueSpan.className = 'param-value';
+                valueSpan.textContent = param.value;
+
+                item.appendChild(labelSpan);
+                item.appendChild(valueSpan);
+                container.appendChild(item);
+            });
         }
 
         function renderMetadata(data) {
@@ -1515,6 +1616,111 @@
             for (const [k, v] of Object.entries(flatMeta)) {
                 addRow(k, v);
             }
+        }
+
+        function renderTools(data) {
+            const container = document.getElementById('tools-container');
+            container.innerHTML = '';
+
+            const tools = data?.request?.body?.tools;
+            if (!tools || !Array.isArray(tools) || tools.length === 0) {
+                container.innerHTML = '<div style="color: var(--text-secondary); padding: 20px;">No tools available for this request</div>';
+                return;
+            }
+
+            const toolKeyConfig = {
+                'type': { title: 'Type', className: 'meta-box' },
+                'description': { title: 'Description', className: 'content-box' },
+                'parameters': { title: 'Parameters', className: 'code-box' },
+                'name': { title: 'Name', className: 'meta-box' }
+            };
+            const toolDisplayOrder = ['type', 'name', 'description', 'parameters'];
+
+            tools.forEach((tool, index) => {
+                const div = document.createElement('div');
+                div.className = 'message role-tool';
+
+                const roleDiv = document.createElement('div');
+                roleDiv.className = 'message-role';
+                roleDiv.textContent = tool.function?.name || `tool_${index}`;
+                div.appendChild(roleDiv);
+
+                const keys = Object.keys(tool).filter(k => k !== 'function');
+                if (tool.function) {
+                    keys.push('function');
+                }
+
+                keys.sort((a, b) => {
+                    const idxA = toolDisplayOrder.indexOf(a);
+                    const idxB = toolDisplayOrder.indexOf(b);
+                    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+                    if (idxA !== -1) return -1;
+                    if (idxB !== -1) return 1;
+                    return a.localeCompare(b);
+                });
+
+                for (const key of keys) {
+                    let val = tool[key];
+                    if (key === 'function' && val) {
+                        val = { 
+                            name: val.name, 
+                            description: val.description, 
+                            parameters: val.parameters 
+                        };
+                    }
+                    if (val === undefined || val === null) continue;
+                    if (typeof val === 'object' && Object.keys(val).length === 0) continue;
+                    if (typeof val === 'string' && val.trim() === '') continue;
+
+                    const config = toolKeyConfig[key] || {};
+                    const title = config.title || key;
+                    let className = config.className || 'generic-box';
+
+                    let rawContent = val;
+                    let displayContent;
+                    let isHtml = false;
+
+                    if (key === 'parameters' && typeof val === 'object') {
+                        try {
+                            rawContent = JSON.stringify(val, null, 2);
+                            displayContent = highlightSyntax(rawContent);
+                            isHtml = true;
+                        } catch (e) {
+                            displayContent = JSON.stringify(val, null, 2);
+                        }
+                    } else if (typeof val === 'object') {
+                        try {
+                            rawContent = JSON.stringify(val, null, 2);
+                            displayContent = rawContent;
+                        } catch (e) {
+                            displayContent = String(val);
+                        }
+                    } else {
+                        displayContent = String(val);
+                    }
+
+                    if (!isHtml) {
+                        displayContent = escapeHtml(displayContent);
+                    }
+
+                    const subBox = document.createElement('div');
+                    subBox.className = `sub-box ${className}`;
+
+                    const headerDiv = document.createElement('div');
+                    headerDiv.className = 'sub-box-header';
+                    headerDiv.textContent = title;
+                    subBox.appendChild(headerDiv);
+
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = 'sub-box-content';
+                    contentDiv.innerHTML = displayContent;
+                    subBox.appendChild(contentDiv);
+
+                    div.appendChild(subBox);
+                }
+
+                container.appendChild(div);
+            });
         }
 
         function renderConversation(data) {
